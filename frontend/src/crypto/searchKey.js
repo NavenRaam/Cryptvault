@@ -1,0 +1,28 @@
+export async function deriveSearchKey(password, salt) {
+  const enc = new TextEncoder();
+
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    baseKey,
+    {
+      name: "HMAC",
+      hash: "SHA-256",
+      length: 256,
+    },
+    false,
+    ["sign"]
+  );
+}
