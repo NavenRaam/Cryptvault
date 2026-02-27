@@ -1,4 +1,4 @@
-from sqlalchemy import ARRAY, Column, Integer, String, JSON
+from sqlalchemy import ARRAY, Column, Integer, String
 from .database import Base
 
 class EncryptedFile(Base):
@@ -6,14 +6,14 @@ class EncryptedFile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # Session isolation
-    session_id = Column(String, index=True)
+    # Vault isolation (zero-knowledge identifier)
+    vault_id = Column(String, index=True)
 
     # Metadata
     file_id = Column(String, index=True)
     version = Column(Integer)
 
-    # Encrypted content
+    # Encrypted content (envelope encryption)
     ciphertext = Column(String)
     encrypted_file_key = Column(String)
 
@@ -23,3 +23,5 @@ class EncryptedFile(Base):
 
     # Searchable encryption beacons
     search_tokens = Column(ARRAY(String))
+    filename = Column(String)
+    mime_type = Column(String)

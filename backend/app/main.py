@@ -1,17 +1,21 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from .database import init_db
 
 from .database import SessionLocal
-from .session import create_session
 from .storage import store_file, search_files
 
 app = FastAPI(title="CryptVault Backend")
 
-# 🔴 CORS MUST BE HERE (before routes)
+@app.on_event("startup")
+def startup():
+    init_db()
+
+# CORS (frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # frontend
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,32 +29,30 @@ def get_db():
         db.close()
 
 
-@app.post("/session")
-def new_session():
-    return create_session()
-
-
+# 🔐 Zero-Knowledge Upload
 @app.post("/upload")
 def upload_file(payload: dict, db: Session = Depends(get_db)):
-    session_id = payload.get("session_id")
+
+    vault_id = payload.get("vault_id")
     encrypted_object = payload.get("data")
 
-    if not session_id or not encrypted_object:
+    if not vault_id or not encrypted_object:
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    store_file(db, session_id, encrypted_object)
+    store_file(db, vault_id, encrypted_object)
     return {"status": "stored"}
 
 
+# 🔍 Blind Search
 @app.post("/search")
 def search(payload: dict, db: Session = Depends(get_db)):
-    session_id = payload.get("session_id")
+    vault_id = payload.get("vault_id")
     search_token = payload.get("search_token")
 
-    if not session_id or not search_token:
+    if not vault_id or not search_token:
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    results = search_files(db, session_id, search_token)
+    results = search_files(db, vault_id, search_token)
 
     return {
         "results": [

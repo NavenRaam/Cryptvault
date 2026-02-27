@@ -1,31 +1,38 @@
+import { fromBase64 } from "./utils";
+
 export async function decryptFile(
-  encryptedFile,
-  encryptedFileKey,
-  masterKey,
-  ivFile,
-  ivKey
+  encryptedFileB64,
+  encryptedFileKeyB64,
+  ivFileB64,
+  ivKeyB64,
+  masterKey
 ) {
-  try {
-    const fileKeyBuffer = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: ivKey },
-      masterKey,
-      encryptedFileKey
-    );
+  const encryptedFile = fromBase64(encryptedFileB64);
+  const encryptedFileKey = fromBase64(encryptedFileKeyB64);
+  const ivFile = fromBase64(ivFileB64);
+  const ivKey = fromBase64(ivKeyB64);
 
-    const fileCryptoKey = await crypto.subtle.importKey(
-      "raw",
-      fileKeyBuffer,
-      "AES-GCM",
-      false,
-      ["decrypt"]
-    );
+  // 🔓 Decrypt file key
+  const fileKeyRaw = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: ivKey },
+    masterKey,
+    encryptedFileKey
+  );
 
-    return await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: ivFile },
-      fileCryptoKey,
-      encryptedFile
-    );
-  } catch (err) {
-    throw new Error("Decryption failed: Invalid key or corrupted data");
-  }
+  const fileKey = await crypto.subtle.importKey(
+    "raw",
+    fileKeyRaw,
+    "AES-GCM",
+    false,
+    ["decrypt"]
+  );
+
+  // 🔓 Decrypt file
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: ivFile },
+    fileKey,
+    encryptedFile
+  );
+
+  return decryptedBuffer;
 }

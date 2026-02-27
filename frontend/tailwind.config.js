@@ -2,10 +2,10 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,jsx}",
+    "./src/**/*.{js,ts,jsx,tsx}", // This ensures all files in src are scanned
   ],
   theme: {
     extend: {},
   },
   plugins: [],
-};
+}

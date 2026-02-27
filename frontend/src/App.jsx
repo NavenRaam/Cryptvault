@@ -5,13 +5,24 @@ import VaultDashboard from "./ui/VaultDashboard";
 export default function App() {
   const [session, setSession] = useState(null);
 
+  const handleUnlock = (sessionData) => {
+    setSession(sessionData);
+  };
+
+  const handleLock = () => {
+    setSession(null);
+  };
+
   return (
-    <div>
+    <>
       {!session ? (
-        <UnlockVault onUnlock={setSession} />
+        <UnlockVault onUnlock={handleUnlock} />
       ) : (
-        <VaultDashboard session={session} />
+        <VaultDashboard
+          session={session}
+          onLock={handleLock}
+        />
       )}
-    </div>
+    </>
   );
 }

@@ -1,28 +1,43 @@
-import { toBase64 } from "./utils";
+// frontend/src/crypto/metadata.js
 import { encryptFile } from "./encryptFile";
 import { generateSearchToken } from "./searchToken";
+import { toBase64 } from "./utils";
 
 export async function buildEncryptedMetadata(
   fileBuffer,
   keywords,
   masterKey,
-  searchKey
+  searchKey,
+  fileName,
+  mimeType
 ) {
-  const encrypted = await encryptFile(fileBuffer, masterKey);
+  // 🔐 Encrypt file + file key
+  const {
+    encryptedFile,
+    encryptedFileKey,
+    ivFile,
+    ivKey,
+  } = await encryptFile(fileBuffer, masterKey);
 
-  const searchTokens = [];
-  for (const keyword of keywords) {
-    const token = await generateSearchToken(keyword, searchKey);
-    searchTokens.push(token);
-  }
+  // 🔎 Generate blind search tokens
+  const search_tokens = await generateSearchToken(keywords, searchKey);
 
+  // 📦 FINAL OBJECT (MUST MATCH BACKEND EXACTLY)
   return {
     file_id: crypto.randomUUID(),
-    ciphertext: toBase64(encrypted.encryptedFile),
-    encrypted_file_key: toBase64(encrypted.encryptedFileKey),
-    iv_file: toBase64(encrypted.ivFile),
-    iv_key: toBase64(encrypted.ivKey),
-    search_tokens: searchTokens,
     version: 1,
+
+    // 🔐 encrypted data
+    ciphertext: toBase64(encryptedFile),
+    encrypted_file_key: toBase64(encryptedFileKey),
+    iv_file: toBase64(ivFile),
+    iv_key: toBase64(ivKey),
+
+    // 🔎 searchable
+    search_tokens,
+
+    // 📎 PLAINTEXT METADATA (SAFE)
+    filename: fileName,
+    mime_type: mimeType,
   };
 }
